@@ -1,7 +1,11 @@
 image:
   pullPolicy: IfNotPresent
-  # Image tag applied to all the containers in the pod (Cryostat, Grafana, JFR Datasources)
-  tag: "2.1.0-SNAPSHOT"
+  # Image tag for Cryostat container
+  cryostatTag: "2.1.0-SNAPSHOT"
+  # Image tag for Grafana container
+  grafanaDashboardTag: "2.0.0"
+  # Image tag for JFR Datasources container
+  jfrDatasourceTag: "2.0.0"
 
 nameOverride: ""
 fullnameOverride: ""

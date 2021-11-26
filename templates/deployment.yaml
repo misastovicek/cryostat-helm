@@ -76,7 +76,7 @@ spec:
           - secretRef:
               name: "{{ include "cryostat.fullname" . }}-jmx-auth"
           name: {{ .Chart.Name }}
-          image: "quay.io/cryostat/cryostat:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "quay.io/cryostat/cryostat:{{ .Values.image.cryostatTag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: 8181
@@ -130,7 +130,7 @@ spec:
           envFrom:
           - secretRef:
               name: "{{ include "cryostat.fullname" . }}-grafana-basic"
-          image: "quay.io/cryostat/cryostat-grafana-dashboard:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "quay.io/cryostat/cryostat-grafana-dashboard:{{ .Values.image.grafanaDashboardTag }}"
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -152,7 +152,7 @@ spec:
         - env:
           - name: LISTEN_HOST
             value: 127.0.0.1
-          image: "quay.io/cryostat/jfr-datasource:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "quay.io/cryostat/jfr-datasource:{{ .Values.image.jfrDatasourceTag }}"
           imagePullPolicy: IfNotPresent
           livenessProbe:
             exec:
