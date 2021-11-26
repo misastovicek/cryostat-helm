@@ -1,0 +1,99 @@
+image:
+  pullPolicy: IfNotPresent
+  # Image tag applied to all the containers in the pod (Cryostat, Grafana, JFR Datasources)
+  tag: "2.1.0-SNAPSHOT"
+
+nameOverride: ""
+fullnameOverride: ""
+
+# Persistent volume size
+persistence:
+  # If enabled, persistent volume will be provisioned. If disabled, emptyDir is used
+  enabled: true
+  # If defined, PVC must be created manually before volume will be bound
+  # The value is evaluated as a template, so, for example, the name can depend on .Release or .Chart
+  existingClaim: ""
+  # Size of a Persistent Volume to create (use only when there is no existingClaim)
+  size: 10
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# Annotations associated with the Pod
+podAnnotations: {}
+
+service:
+  # Annotations for ingress. For example to deploy internal LoadBalancer in Public Cloud
+  annotations: {}
+  # Consider LoadBalancer / NodePort in case that the Ingress is not enabled
+  type: ClusterIP
+
+cryostat:
+  # Whether to deploy only minimal version of Cryostat (without Grafana and JFR Datasources)
+  minimal: true
+
+  # Cryostat RJMX credentials
+  # Password is random generated alphanumeric string if not set here
+  rjmxUser: cryostat
+  #rjmxPassword: cryostat
+
+  # Grafana admin credentials - used only if cryostat.minimal is set to false
+  # Password is random generated alphanumeric string if not set here
+  grafanaUser: grafana
+  #grafanaPassword: grafana
+
+  # Hostnames for various Cryostat components
+  # This section is also used for ingress rules generation
+  # If ingress is set with TLS, fill the same hostnames in the ingress.tls section
+  hosts:
+    # Hostname where Cryostat Web interface is listening
+    web: cryostat.example
+    # Hostname where Cryostat is listening
+    listenHost: cryostat-command.example
+    # Hostname where Grafana is listening - used only if cryostat.minimal is set to false
+    grafana: cryostat-grafana.example
+
+ingress:
+  # Whether to enable ingress
+  enabled: true
+  # Ingress Class Name
+  className: "nginx"
+  # Annotations set on the Ingress resource
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+  # TLS configuration for the Ingress resource
+  # You may have different secrets for each of the components or the same for all of them
+  tls: []
+  #  - secretName: cryostat-example-tls
+  #    hosts:
+  #      - cryostat.example
+  #      - cryostat-command.example
+  #  - secretName: cryostat-grafana-example-tls
+  #    hosts:
+  #      - cryostat-grafana.example
+
+resources:
+  {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

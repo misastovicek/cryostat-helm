@@ -1,0 +1,16 @@
+{{- if and .Values.persistence.enabled (not .Values.persistence.existingClaim) }}
+{{- $fullName := include "cryostat-helm.fullname" . }}
+{{- $storageClass := .Values.persistence.storageClassName }}
+{{- $storageSize := .Values.persistence.size -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $fullName }}
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: {{ $storageClass }}
+  resources:
+    requests:
+      storage: "{{ $storageSize | toString }}Gi"
+{{- end }}

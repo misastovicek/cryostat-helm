@@ -1,0 +1,202 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cryostat-helm.fullname" . }}
+  labels:
+    {{- include "cryostat-helm.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "cryostat-helm.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "cryostat-helm.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "cryostat-helm.serviceAccountName" . }}
+      securityContext:
+        fsGroup: 18500
+      containers:
+        - env:
+          - name: CRYOSTAT_ALLOW_UNTRUSTED_SSL
+            value: "true"
+          - name: CRYOSTAT_WEB_PORT
+            value: "8181"
+          # If not external TLS otherwise 443
+          {{- if .Values.ingress.enabled }}
+          {{- if .Values.ingress.tls }}
+          - name: CRYOSTAT_EXT_WEB_PORT
+            value: "443"
+          - name: CRYOSTAT_EXT_LISTEN_PORT
+            value: "443"
+          {{- else }}
+          - name: CRYOSTAT_EXT_WEB_PORT
+            value: "80"
+          - name: CRYOSTAT_EXT_LISTEN_PORT
+            value: "80"
+          {{- end }}
+          {{- end }}
+          - name: CRYOSTAT_WEB_HOST
+            value: {{ .Values.cryostat.hosts.web | quote }}
+          - name: CRYOSTAT_LISTEN_PORT
+            value: "9090"
+          - name: CRYOSTAT_LISTEN_HOST
+            value: {{ .Values.cryostat.hosts.listenHost | quote }}
+          - name: CRYOSTAT_CONFIG_PATH
+            value: /opt/cryostat.d/conf.d
+          - name: CRYOSTAT_ARCHIVE_PATH
+            value: /opt/cryostat.d/recordings.d
+          - name: CRYOSTAT_TEMPLATE_PATH
+            value: /opt/cryostat.d/templates.d
+          - name: CRYOSTAT_CLIENTLIB_PATH
+            value: /opt/cryostat.d/clientlib.d
+          {{- if not .Values.cryostat.minimal }}
+          - name: GRAFANA_DATASOURCE_URL
+            value: http://127.0.0.1:8080
+          {{- if .Values.ingress.tls }}
+          - name: GRAFANA_DASHBOARD_URL
+            value: https://{{ .Values.cryostat.hosts.grafana }}:3000
+          {{- else }}
+          - name: GRAFANA_DASHBOARD_URL
+            value: http://{{ .Values.cryostat.hosts.grafana }}:3000
+          {{- end }}
+          {{- end }}
+          - name: CRYOSTAT_DISABLE_SSL
+            value: "true"
+          {{- if .Values.ingress.tls }}
+          - name: CRYOSTAT_SSL_PROXIED
+            value: "true"
+          {{- end }}
+          envFrom:
+          - secretRef:
+              name: "{{ include "cryostat-helm.fullname" . }}-jmx-auth"
+          name: {{ .Chart.Name }}
+          image: "quay.io/cryostat/cryostat:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8181
+              protocol: TCP
+            - containerPort: 9090
+              protocol: TCP
+            - containerPort: 9091
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health
+              port: 8181
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          startupProbe:
+            failureThreshold: 18
+            httpGet:
+              path: /health
+              port: 8181
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /opt/cryostat.d/conf.d
+            name: data
+            subPath: config
+          - mountPath: /opt/cryostat.d/recordings.d
+            name: data
+            subPath: flightrecordings
+          - mountPath: /opt/cryostat.d/templates.d
+            name: data
+            subPath: templates
+          - mountPath: /opt/cryostat.d/clientlib.d
+            name: data
+            subPath: clientlib
+          - mountPath: truststore
+            name: data
+            subPath: truststore
+        {{- if not .Values.cryostat.minimal}}
+        - env:
+          - name: JFR_DATASOURCE_URL
+            value: http://127.0.0.1:8080
+          envFrom:
+          - secretRef:
+              name: "{{ include "cryostat-helm.fullname" . }}-grafana-basic"
+          image: "quay.io/cryostat/cryostat-grafana-dashboard:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /api/health
+              port: 3000
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: "{{ .Chart.Name }}-grafana"
+          ports:
+          - containerPort: 3000
+            protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - env:
+          - name: LISTEN_HOST
+            value: 127.0.0.1
+          image: "quay.io/cryostat/jfr-datasource:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command:
+              - curl
+              - --fail
+              - http://127.0.0.1:8080
+            failureThreshold: 3
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: "{{ .Chart.Name }}-jfr-datasource"
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+{{- if and .Values.persistence.enabled .Values.persistence.existingClaim }}
+        - name: data
+          persistentVolumeClaim:
+  {{- with .Values.persistence.existingClaim }}
+            claimName: {{ tpl . $ }}
+  {{- end }}
+{{- else if not .Values.persistence.enabled }}
+        - name: data
+          emptyDir: {}
+{{- else if and .Values.persistence.enabled (not .Values.persistence.existingClaim) }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "cryostat-helm.fullname" . }}
+{{- end }}
