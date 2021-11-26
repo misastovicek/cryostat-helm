@@ -81,11 +81,11 @@ spec:
             backend:
               {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
               service:
-                name: {{ $fullName }}
+                name: "{{ $fullName }}-grafana"
                 port:
                   number: 3000
               {{- else }}
-              serviceName: {{ $fullName }}
+              serviceName: "{{ $fullName }}-grafana"
               servicePort: 3000
               {{- end }}
     {{- end }}
