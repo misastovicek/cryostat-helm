@@ -1,2 +1,2 @@
-# cryostat-helm
+# cryostat
 Helm Chart for Cryostat

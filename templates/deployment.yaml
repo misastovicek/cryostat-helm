@@ -1,14 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "cryostat-helm.fullname" . }}
+  name: {{ include "cryostat.fullname" . }}
   labels:
-    {{- include "cryostat-helm.labels" . | nindent 4 }}
+    {{- include "cryostat.labels" . | nindent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "cryostat-helm.selectorLabels" . | nindent 6 }}
+      {{- include "cryostat.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -16,9 +16,9 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "cryostat-helm.selectorLabels" . | nindent 8 }}
+        {{- include "cryostat.selectorLabels" . | nindent 8 }}
     spec:
-      serviceAccountName: {{ include "cryostat-helm.serviceAccountName" . }}
+      serviceAccountName: {{ include "cryostat.serviceAccountName" . }}
       securityContext:
         fsGroup: 18500
       containers:
@@ -74,7 +74,7 @@ spec:
           {{- end }}
           envFrom:
           - secretRef:
-              name: "{{ include "cryostat-helm.fullname" . }}-jmx-auth"
+              name: "{{ include "cryostat.fullname" . }}-jmx-auth"
           name: {{ .Chart.Name }}
           image: "quay.io/cryostat/cryostat:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -129,7 +129,7 @@ spec:
             value: http://127.0.0.1:8080
           envFrom:
           - secretRef:
-              name: "{{ include "cryostat-helm.fullname" . }}-grafana-basic"
+              name: "{{ include "cryostat.fullname" . }}-grafana-basic"
           image: "quay.io/cryostat/cryostat-grafana-dashboard:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: IfNotPresent
           livenessProbe:
@@ -198,5 +198,5 @@ spec:
 {{- else if and .Values.persistence.enabled (not .Values.persistence.existingClaim) }}
         - name: data
           persistentVolumeClaim:
-            claimName: {{ include "cryostat-helm.fullname" . }}
+            claimName: {{ include "cryostat.fullname" . }}
 {{- end }}

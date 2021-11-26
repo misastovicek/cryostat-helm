@@ -1,5 +1,5 @@
 {{- if and .Values.persistence.enabled (not .Values.persistence.existingClaim) }}
-{{- $fullName := include "cryostat-helm.fullname" . }}
+{{- $fullName := include "cryostat.fullname" . }}
 {{- $storageClass := .Values.persistence.storageClassName }}
 {{- $storageSize := .Values.persistence.size -}}
 apiVersion: v1

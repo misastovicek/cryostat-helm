@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "cryostat-helm.fullname" . }}
+  name: {{ include "cryostat.fullname" . }}
   labels:
     component: cryostat
-    {{- include "cryostat-helm.labels" . | nindent 4 }}
+    {{- include "cryostat.labels" . | nindent 4 }}
   {{- with .Values.service.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -21,15 +21,15 @@ spec:
       protocol: TCP
       name: jfr-jmx
   selector:
-    {{- include "cryostat-helm.selectorLabels" . | nindent 4 }}
+    {{- include "cryostat.selectorLabels" . | nindent 4 }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: "{{ include "cryostat-helm.fullname" . }}-command"
+  name: "{{ include "cryostat.fullname" . }}-command"
   labels:
     component: command-channel
-    {{- include "cryostat-helm.labels" . | nindent 4 }}
+    {{- include "cryostat.labels" . | nindent 4 }}
   {{- with .Values.service.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -42,16 +42,16 @@ spec:
       protocol: TCP
       name: cmdchan
   selector:
-    {{- include "cryostat-helm.selectorLabels" . | nindent 4 }}
+    {{- include "cryostat.selectorLabels" . | nindent 4 }}
 {{- if not .Values.cryostat.minimal }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: "{{ include "cryostat-helm.fullname" . }}-grafana"
+  name: "{{ include "cryostat.fullname" . }}-grafana"
   labels:
     component: grafana
-    {{- include "cryostat-helm.labels" . | nindent 4 }}
+    {{- include "cryostat.labels" . | nindent 4 }}
   {{- with .Values.service.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -64,5 +64,5 @@ spec:
       protocol: TCP
       name: 3000-tcp
   selector:
-    {{- include "cryostat-helm.selectorLabels" . | nindent 4 }}
+    {{- include "cryostat.selectorLabels" . | nindent 4 }}
 {{- end }}
